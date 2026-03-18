@@ -42,9 +42,14 @@
           <% topics.forEach((topic) => { %>
             <li class="topic-item">
               <a class="topic-card-link" href="/student/topics/<%= topic.id %>?group=<%= selectedGroup %>">
-                <h3 class="topic-card-title"><%= topic.title %></h3>
-                <p class="topic-card-meta">已发布：<%= new Date(topic.createdAt).toLocaleString() %></p>
-                <p class="topic-card-meta">讨论数：<%= topic.comments ? topic.comments.length : 0 %></p>
+                <div class="topic-card-top">
+                  <h3 class="topic-card-title"><%= topic.title %></h3>
+                  <span class="topic-meta-pill">可参与</span>
+                </div>
+                <div class="topic-meta-row">
+                  <span class="topic-meta-pill">讨论 <strong><%= topic.comments ? topic.comments.length : 0 %></strong></span>
+                  <span class="topic-meta-pill">发布于 <%= new Date(topic.createdAt).toLocaleString() %></span>
+                </div>
               </a>
             </li>
           <% }) %>

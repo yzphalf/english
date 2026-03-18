@@ -35,16 +35,18 @@
             <li class="topic-item topic-click-item" data-href="/teacher/topics/<%= topic.id %>?group=all" tabindex="0">
               <div class="topic-card-main-left">
                 <a class="topic-link topic-link-block" href="/teacher/topics/<%= topic.id %>?group=all">
-                  <strong>
-                    <%= topic.title %>
+                  <div class="topic-headline">
+                    <strong><%= topic.title %></strong>
                     <% if (topic.closedAt) { %>
                       <span class="status-pill">已结束</span>
+                    <% } else { %>
+                      <span class="topic-meta-pill">进行中</span>
                     <% } %>
-                  </strong>
-                  <small>
-                    已有 <strong><%= topic.comments.length %></strong> 条发言 ·
-                    发布于 <%= new Date(topic.createdAt).toLocaleString() %>
-                  </small>
+                  </div>
+                  <div class="topic-meta-row">
+                    <span class="topic-meta-pill">发言 <strong><%= topic.comments.length %></strong></span>
+                    <span class="topic-meta-pill">发布于 <%= new Date(topic.createdAt).toLocaleString() %></span>
+                  </div>
                 </a>
               </div>
               <div class="topic-card-actions-right">

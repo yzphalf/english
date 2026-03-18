@@ -38,7 +38,10 @@
         <span class="chip">当前第 <%= selectedGroup %> 组</span>
       </div>
       <p class="prompt"><%= topic.prompt %></p>
-      <p class="group-tip">你提交的发言会记录为第 <strong><%= selectedGroup %></strong> 组。</p>
+      <div class="topic-meta-row">
+        <span class="topic-meta-pill">当前身份：第 <strong><%= selectedGroup %></strong> 组</span>
+        <span class="topic-meta-pill">主题发言总数：<strong><%= comments.length %></strong></span>
+      </div>
 
       <h3>发表你的观点</h3>
       <form method="POST" action="/student/topics/<%= topic.id %>/comments" class="form">
@@ -67,7 +70,8 @@
           <% comments.forEach((comment) => { %>
             <li class="comment-item">
               <div class="meta">
-                <strong><%= comment.author %>（第 <%= comment.group || '未分组' %> 组）</strong>
+                <strong><%= comment.author %></strong>
+                <span class="topic-meta-pill">第 <%= comment.group || '未分组' %> 组</span>
                 <small><%= new Date(comment.createdAt).toLocaleString() %></small>
               </div>
               <p><%= comment.content %></p>
