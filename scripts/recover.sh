@@ -5,6 +5,8 @@ APP_DIR="${APP_DIR:-/opt/english/app}"
 BACKUP_DIR="${BACKUP_DIR:-/opt/english/backups}"
 SERVICE_NAME="${SERVICE_NAME:-english}"
 BRANCH="${BRANCH:-main}"
+DOMAIN="${DOMAIN:-english.051231.xyz}"
+PUBLIC_BASE_URL="${PUBLIC_BASE_URL:-https://${DOMAIN}:8443}"
 
 if [ ! -d "$APP_DIR" ]; then
   echo "APP_DIR not found: $APP_DIR" >&2
@@ -56,6 +58,8 @@ if command -v pm2 >/dev/null 2>&1; then
   if pm2 describe "$SERVICE_NAME" >/dev/null 2>&1; then
     pm2 restart "$SERVICE_NAME" --update-env
   else
+    PUBLIC_BASE_URL="$PUBLIC_BASE_URL" \
+    PORT="${PORT:-3000}" HOST="${HOST:-127.0.0.1}" NODE_ENV="${NODE_ENV:-production}" \
     RATE_LIMIT_COMMENT_PER_MIN="${RATE_LIMIT_COMMENT_PER_MIN:-30}" \
     RATE_LIMIT_TEACHER_POST_PER_MIN="${RATE_LIMIT_TEACHER_POST_PER_MIN:-10}" \
     RATE_LIMIT_LOGIN_PER_MIN="${RATE_LIMIT_LOGIN_PER_MIN:-20}" \
