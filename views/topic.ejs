@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= topic.title %> - 讨论详情</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body class="student-page">
+  <header class="topbar topbar-student">
+    <div>
+      <p class="eyebrow">Discussion Room</p>
+      <h1><%= topic.title %></h1>
+    </div>
+    <div class="top-actions">
+      <form method="GET" action="/student/topics/<%= topic.id %>" class="top-group-form">
+        <label>
+          选择小组
+          <select name="group" onchange="this.form.submit()">
+            <% groups.forEach((group) => { %>
+              <option value="<%= group %>" <%= group === selectedGroup ? 'selected' : '' %>>
+                第 <%= group %> 组
+              </option>
+            <% }) %>
+          </select>
+        </label>
+      </form>
+      <nav>
+        <a class="back-link" href="/student?group=<%= selectedGroup %>">返回主题列表</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container discussion-stack">
+    <section class="card card-featured">
+      <div class="section-head">
+        <h2>我来发表讨论</h2>
+        <span class="chip">当前第 <%= selectedGroup %> 组</span>
+      </div>
+      <p class="prompt"><%= topic.prompt %></p>
+      <p class="group-tip">你提交的发言会记录为第 <strong><%= selectedGroup %></strong> 组。</p>
+
+      <h3>发表你的观点</h3>
+      <form method="POST" action="/student/topics/<%= topic.id %>/comments" class="form">
+        <input type="hidden" name="group" value="<%= selectedGroup %>" />
+        <label>
+          你的名字
+          <input type="text" name="author" placeholder="例如：Alice" required />
+        </label>
+        <label>
+          讨论内容
+          <textarea name="content" rows="5" placeholder="写下你的观点" required></textarea>
+        </label>
+        <button type="submit" data-loading-text="提交中...">提交讨论</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <h2>同学讨论</h2>
+        <span class="chip"><%= comments.length %> 条发言</span>
+      </div>
+      <% if (comments.length === 0) { %>
+        <p class="empty-note">还没有讨论内容，来发表第一条吧。</p>
+      <% } else { %>
+        <ul class="comment-list comment-list-cards">
+          <% comments.forEach((comment) => { %>
+            <li class="comment-item">
+              <div class="meta">
+                <strong><%= comment.author %>（第 <%= comment.group || '未分组' %> 组）</strong>
+                <small><%= new Date(comment.createdAt).toLocaleString() %></small>
+              </div>
+              <p><%= comment.content %></p>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  </main>
+  <script src="/feedback.js"></script>
+</body>
+</html>

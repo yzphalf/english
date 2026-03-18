@@ -1,0 +1,25 @@
+{
+  "name": "english",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "bench:100": "autocannon -c 100 -d 20 http://127.0.0.1:3000/student"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "compression": "^1.8.1",
+    "ejs": "^5.0.1",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "autocannon": "^8.0.0"
+  }
+}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>老师登录</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body class="teacher-login-page">
+  <main class="container login-container">
+    <section class="card login-card">
+      <div class="section-head">
+        <h2>老师登录</h2>
+        <span class="chip">Teacher</span>
+      </div>
+      <% if (error) { %>
+        <p class="error-note"><%= error %></p>
+      <% } %>
+      <form method="POST" action="/teacher/login" class="form">
+        <input type="hidden" name="next" value="<%= nextPath %>" />
+        <label>
+          账号
+          <input type="text" name="username" autocomplete="username" required />
+        </label>
+        <label>
+          密码
+          <input type="password" name="password" autocomplete="current-password" required />
+        </label>
+        <button type="submit" data-loading-text="登录中...">登录</button>
+      </form>
+    </section>
+  </main>
+  <script src="/feedback.js"></script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= topic.title %> - 全屏观看讨论</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body class="teacher-page">
+  <header class="topbar topbar-teacher">
+    <div>
+      <p class="eyebrow">Teacher Panel</p>
+      <h1>全屏观看讨论</h1>
+    </div>
+    <div class="group-badge">
+      <%= selectedGroup === 'all' ? '全部同学' : ('第 ' + selectedGroup + ' 组') %>
+    </div>
+    <nav class="teacher-watch-nav">
+      <a class="back-link" href="/teacher?topic=<%= topic.id %>&group=<%= selectedGroup %>">返回老师首页</a>
+      <form method="POST" action="/teacher/logout" class="inline-form">
+        <button type="submit" class="logout-btn">退出登录</button>
+      </form>
+    </nav>
+  </header>
+
+  <main class="container watch-container">
+    <section class="card card-featured">
+      <div class="section-head">
+        <h2><%= topic.title %></h2>
+        <span class="chip"><%= filteredComments.length %> 条发言</span>
+      </div>
+      <p class="prompt"><%= topic.prompt %></p>
+
+      <form method="GET" action="/teacher/topics/<%= topic.id %>" class="group-form teacher-filter-form">
+        <label class="group-label">
+          切换查看范围
+          <select name="group" onchange="this.form.submit()">
+            <option value="all" <%= selectedGroup === 'all' ? 'selected' : '' %>>全部同学</option>
+            <% groups.forEach((group) => { %>
+              <option value="<%= group %>" <%= group === selectedGroup ? 'selected' : '' %>>
+                第 <%= group %> 组（<%= groupCommentCounts[group] || 0 %>）
+              </option>
+            <% }) %>
+          </select>
+        </label>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <h2>学生讨论内容</h2>
+      </div>
+      <% if (filteredComments.length === 0) { %>
+        <p class="empty-note">当前筛选下还没有讨论内容。</p>
+      <% } else { %>
+        <ul class="comment-list comment-list-cards">
+          <% filteredComments.forEach((comment) => { %>
+            <li class="comment-item">
+              <div class="meta">
+                <strong><%= comment.author %>（第 <%= comment.group || '未分组' %> 组）</strong>
+                <small><%= new Date(comment.createdAt).toLocaleString() %></small>
+              </div>
+              <p><%= comment.content %></p>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  </main>
+  <script src="/feedback.js"></script>
+</body>
+</html>
