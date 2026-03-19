@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>老师讨论控制台</title>
+  <title>英语课堂讨论（老师端）</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body
@@ -14,8 +14,8 @@
 >
   <header class="topbar topbar-teacher">
     <div>
-      <p class="eyebrow">Teacher Panel</p>
-      <h1>讨论主题总览</h1>
+      <p class="eyebrow">English Speaking Board</p>
+      <h1>英语课堂讨论（老师端）</h1>
     </div>
     <form method="POST" action="/teacher/logout" class="inline-form">
       <button type="submit" class="logout-btn" data-loading-text="退出中...">退出登录</button>
@@ -29,7 +29,7 @@
     </div>
     <section class="card">
       <div class="section-head">
-        <h2>全部讨论主题</h2>
+        <h2>讨论面板</h2>
         <span class="chip"><%= topics.length %> 个主题</span>
       </div>
 
