@@ -823,7 +823,14 @@ app.get('/student/topics/:id', (req, res, next) => {
 
     const selectedGroup = parseGroup(req.query.group) || 1;
     const comments = [...topic.comments].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-    res.render('topic', { topic, comments, selectedGroup, groups: GROUPS });
+    res.render('topic', {
+      topic,
+      comments,
+      selectedGroup,
+      groups: GROUPS,
+      watchVersion: getWatchVersion(`topic:${topic.id}`),
+      watchPollMs: WATCH_POLL_MS
+    });
   } catch (err) {
     next(err);
   }

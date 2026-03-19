@@ -6,7 +6,12 @@
   <title><%= topic.title %> - 讨论详情</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
-<body class="student-page">
+<body
+  class="student-page"
+  data-watch-endpoint="/watch/topics/<%= topic.id %>/version"
+  data-watch-version="<%= watchVersion %>"
+  data-watch-poll-ms="<%= watchPollMs %>"
+>
   <header class="topbar topbar-student">
     <div>
       <p class="eyebrow">Discussion Room</p>
@@ -81,6 +86,7 @@
       <% } %>
     </section>
   </main>
-  <script src="/feedback.js"></script>
+  <script src="/feedback.js?v=20260319-2"></script>
+  <script src="/auto-refresh.js?v=20260319-2"></script>
 </body>
 </html>
