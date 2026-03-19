@@ -485,6 +485,26 @@ function buildStudentTopicLink(req, topicId) {
   return `${getPublicBaseUrl(req)}/student/topics/${topicId}`;
 }
 
+function resolveQrTargetLink(req, topicId) {
+  const fallback = buildStudentTopicLink(req, topicId);
+  const raw = (req.query.link || '').toString().trim();
+  if (!raw) {
+    return fallback;
+  }
+  try {
+    const parsed = new URL(raw);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      return fallback;
+    }
+    if (parsed.pathname !== `/student/topics/${topicId}`) {
+      return fallback;
+    }
+    return parsed.toString();
+  } catch (_) {
+    return fallback;
+  }
+}
+
 function requireTeacherAuth(req, res, next) {
   if (req.session && req.session.teacherAuthed) {
     return next();
@@ -676,7 +696,7 @@ app.get('/teacher/topics/:id', (req, res, next) => {
         groupCommentCounts[comment.group] += 1;
       }
     });
-    const studentTopicLink = buildStudentTopicLink(req, topic.id);
+    const studentTopicLink = resolveQrTargetLink(req, topic.id);
 
     res.render('teacher-watch', {
       topic,

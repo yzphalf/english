@@ -155,7 +155,7 @@
 
     function openQrModal(topicId, studentPath) {
       const absoluteLink = `${window.location.origin}${studentPath}`;
-      const qrSrc = `/teacher/topics/${topicId}/qr?t=${Date.now()}`;
+      const qrSrc = `/teacher/topics/${topicId}/qr?link=${encodeURIComponent(absoluteLink)}&t=${Date.now()}`;
       qrHint.hidden = true;
       qrTopicImage.classList.add('is-loading');
       qrTopicImage.src = qrSrc;
