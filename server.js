@@ -41,6 +41,7 @@ let redisReady = false;
 const localRateMap = new Map();
 const SESSION_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
 const WATCH_POLL_MS = Number(process.env.WATCH_POLL_MS) || 1500;
+const DEFAULT_PUBLIC_BASE_URL = 'https://english.051231.xyz:8443';
 
 initSchema();
 migrateFromLegacyJson();
@@ -474,7 +475,9 @@ function migrateFromLegacyJson() {
 }
 
 function getPublicBaseUrl(req) {
-  const configured = (process.env.PUBLIC_BASE_URL || '').trim().replace(/\/+$/, '');
+  const configured = (process.env.PUBLIC_BASE_URL || DEFAULT_PUBLIC_BASE_URL)
+    .trim()
+    .replace(/\/+$/, '');
   if (configured) {
     return configured;
   }
