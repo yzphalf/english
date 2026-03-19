@@ -18,8 +18,8 @@ const GROUPS = Array.from({ length: GROUP_COUNT }, (_, i) => i + 1);
 const FIXED_TEST_TOPIC_ID = 'test-topic-01';
 const FIXED_TEST_TOPIC_TITLE = '固定测试主题（请直接点我）';
 const FIXED_TEST_TOPIC_PROMPT = '这是老师端固定测试主题，用于快速验证点击进入、分组筛选与讨论展示流程。';
-const TEACHER_USERNAME = process.env.TEACHER_USERNAME || 'teacher';
-const TEACHER_PASSWORD = process.env.TEACHER_PASSWORD || '123456';
+const TEACHER_USERNAME = process.env.TEACHER_USERNAME || 'admin';
+const TEACHER_PASSWORD = process.env.TEACHER_PASSWORD || 'half123';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'teacher-session-secret-change-me';
 const REDIS_URL = (process.env.REDIS_URL || '').trim();
 const RATE_LIMIT_COMMENT_PER_MIN = Number(process.env.RATE_LIMIT_COMMENT_PER_MIN) || 30;
@@ -39,6 +39,8 @@ const redis = REDIS_URL ? new Redis(REDIS_URL, {
 }) : null;
 let redisReady = false;
 const localRateMap = new Map();
+const SESSION_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
+const WATCH_POLL_MS = Number(process.env.WATCH_POLL_MS) || 1500;
 
 initSchema();
 migrateFromLegacyJson();
@@ -50,17 +52,6 @@ app.disable('x-powered-by');
 
 app.use(compression());
 app.use(express.urlencoded({ extended: false }));
-app.use(session({
-  name: 'teacher.sid',
-  secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    sameSite: 'lax',
-    maxAge: 1000 * 60 * 60 * 8
-  }
-}));
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   next();
@@ -94,8 +85,175 @@ function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_topics_created_at ON topics(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_comments_topic_created_at ON comments(topic_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_comments_group_no ON comments(group_no);
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      sid TEXT PRIMARY KEY,
+      sess TEXT NOT NULL,
+      expires_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+
+    CREATE TABLE IF NOT EXISTS watch_state (
+      key TEXT PRIMARY KEY,
+      version INTEGER NOT NULL
+    );
   `);
 }
+
+const getWatchVersionStmt = db.prepare('SELECT version FROM watch_state WHERE key = ?');
+const upsertWatchVersionStmt = db.prepare(
+  `INSERT INTO watch_state (key, version) VALUES (?, ?)
+   ON CONFLICT(key) DO UPDATE SET version = excluded.version`
+);
+const touchWatchVersionTx = db.transaction((key) => {
+  const current = getWatchVersionStmt.get(key);
+  const next = current ? (current.version + 1) : 1;
+  upsertWatchVersionStmt.run(key, next);
+  return next;
+});
+
+function ensureWatchState() {
+  if (!getWatchVersionStmt.get('global')) {
+    upsertWatchVersionStmt.run('global', 1);
+  }
+}
+
+function getWatchVersion(key) {
+  const row = getWatchVersionStmt.get(key);
+  return row ? row.version : 0;
+}
+
+function touchWatchVersion(key) {
+  return touchWatchVersionTx(key);
+}
+
+function touchGlobalWatchVersion() {
+  return touchWatchVersion('global');
+}
+
+function touchTopicWatchVersion(topicId) {
+  return touchWatchVersion(`topic:${topicId}`);
+}
+
+function didVersionChange(since, current) {
+  if (since === undefined || since === null || since === '') {
+    return false;
+  }
+  const parsed = Number(since);
+  if (!Number.isFinite(parsed)) {
+    return false;
+  }
+  return parsed !== current;
+}
+
+ensureWatchState();
+
+class SQLiteSessionStore extends session.Store {
+  constructor(sqliteDb) {
+    super();
+    this.db = sqliteDb;
+    this.getStmt = this.db.prepare(
+      'SELECT sess, expires_at FROM sessions WHERE sid = ? LIMIT 1'
+    );
+    this.setStmt = this.db.prepare(
+      `INSERT INTO sessions (sid, sess, expires_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(sid) DO UPDATE SET
+         sess = excluded.sess,
+         expires_at = excluded.expires_at`
+    );
+    this.destroyStmt = this.db.prepare('DELETE FROM sessions WHERE sid = ?');
+    this.touchStmt = this.db.prepare(
+      'UPDATE sessions SET expires_at = ? WHERE sid = ?'
+    );
+    this.cleanupStmt = this.db.prepare('DELETE FROM sessions WHERE expires_at <= ?');
+
+    this.cleanupTimer = setInterval(() => {
+      try {
+        this.cleanupStmt.run(Date.now());
+      } catch (error) {
+        // ignore cleanup errors to avoid impacting request path
+      }
+    }, SESSION_CLEANUP_INTERVAL_MS);
+    this.cleanupTimer.unref();
+  }
+
+  get(sid, callback) {
+    try {
+      const row = this.getStmt.get(sid);
+      if (!row) {
+        return callback(null, null);
+      }
+      if (row.expires_at <= Date.now()) {
+        this.destroyStmt.run(sid);
+        return callback(null, null);
+      }
+      return callback(null, JSON.parse(row.sess));
+    } catch (error) {
+      return callback(error);
+    }
+  }
+
+  set(sid, sess, callback) {
+    try {
+      const expiresAt = getSessionExpiryMs(sess);
+      this.setStmt.run(sid, JSON.stringify(sess), expiresAt);
+      return callback && callback(null);
+    } catch (error) {
+      return callback && callback(error);
+    }
+  }
+
+  destroy(sid, callback) {
+    try {
+      this.destroyStmt.run(sid);
+      return callback && callback(null);
+    } catch (error) {
+      return callback && callback(error);
+    }
+  }
+
+  touch(sid, sess, callback) {
+    try {
+      const expiresAt = getSessionExpiryMs(sess);
+      this.touchStmt.run(expiresAt, sid);
+      return callback && callback(null);
+    } catch (error) {
+      return callback && callback(error);
+    }
+  }
+}
+
+function getSessionExpiryMs(sess) {
+  const fromExpires = sess && sess.cookie && sess.cookie.expires
+    ? new Date(sess.cookie.expires).getTime()
+    : NaN;
+  if (Number.isFinite(fromExpires)) {
+    return fromExpires;
+  }
+  const maxAgeMs = Number(sess && sess.cookie && sess.cookie.maxAge);
+  if (Number.isFinite(maxAgeMs) && maxAgeMs > 0) {
+    return Date.now() + maxAgeMs;
+  }
+  return Date.now() + (1000 * 60 * 60 * 8);
+}
+
+const sessionStore = new SQLiteSessionStore(db);
+app.use(session({
+  name: 'teacher.sid',
+  secret: SESSION_SECRET,
+  store: sessionStore,
+  resave: false,
+  saveUninitialized: false,
+  proxy: true,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: 'auto',
+    maxAge: 1000 * 60 * 60 * 8
+  }
+}));
 
 function makeId() {
   return crypto.randomUUID().slice(0, 8);
@@ -196,6 +354,7 @@ function createTopic({ id = makeId(), title, prompt, createdAt = new Date().toIS
   db.prepare(
     'INSERT INTO topics (id, title, prompt, created_at, closed_at) VALUES (?, ?, ?, ?, ?)'
   ).run(id, title, prompt, createdAt, closedAt);
+  return id;
 }
 
 function closeTopic(topicId) {
@@ -417,7 +576,13 @@ app.get('/student', (req, res, next) => {
       .filter((topic) => !isTopicClosed(topic))
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     const selectedGroup = parseGroup(req.query.group) || 1;
-    res.render('index', { topics, groups: GROUPS, selectedGroup });
+    res.render('index', {
+      topics,
+      groups: GROUPS,
+      selectedGroup,
+      watchVersion: getWatchVersion('global'),
+      watchPollMs: WATCH_POLL_MS
+    });
   } catch (err) {
     next(err);
   }
@@ -435,14 +600,19 @@ app.post('/teacher/login', rateLimit({
   prefix: 'rl:teacher-login',
   limit: RATE_LIMIT_LOGIN_PER_MIN,
   windowSec: 60
-}), (req, res) => {
+}), (req, res, next) => {
   const username = (req.body.username || '').trim();
   const password = (req.body.password || '').trim();
   const nextPath = (req.body.next || '/teacher').toString();
 
   if (username === TEACHER_USERNAME && password === TEACHER_PASSWORD) {
     req.session.teacherAuthed = true;
-    return res.redirect(nextPath.startsWith('/') ? nextPath : '/teacher');
+    return req.session.save((saveErr) => {
+      if (saveErr) {
+        return next(saveErr);
+      }
+      return res.redirect(nextPath.startsWith('/') ? nextPath : '/teacher');
+    });
   }
 
   return res.status(401).render('teacher-login', {
@@ -467,7 +637,11 @@ app.get('/teacher', (req, res, next) => {
       if (b.id === FIXED_TEST_TOPIC_ID) return 1;
       return b.createdAt.localeCompare(a.createdAt);
     });
-    res.render('teacher', { topics });
+    res.render('teacher', {
+      topics,
+      watchVersion: getWatchVersion('global'),
+      watchPollMs: WATCH_POLL_MS
+    });
   } catch (err) {
     next(err);
   }
@@ -510,11 +684,31 @@ app.get('/teacher/topics/:id', (req, res, next) => {
       filteredComments,
       groupCommentCounts,
       groups: GROUPS,
-      studentTopicLink
+      studentTopicLink,
+      watchVersion: getWatchVersion(`topic:${topic.id}`),
+      watchPollMs: WATCH_POLL_MS
     });
   } catch (err) {
     next(err);
   }
+});
+
+app.get('/watch/version', (req, res) => {
+  const version = getWatchVersion('global');
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(200).json({
+    version,
+    changed: didVersionChange(req.query.since, version)
+  });
+});
+
+app.get('/watch/topics/:id/version', (req, res) => {
+  const version = getWatchVersion(`topic:${req.params.id}`);
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(200).json({
+    version,
+    changed: didVersionChange(req.query.since, version)
+  });
 });
 
 app.get('/teacher/topics/:id/qr', async (req, res, next) => {
@@ -560,7 +754,9 @@ app.post('/teacher/topics', rateLimit({
   }
 
   try {
-    createTopic({ title, prompt });
+    const topicId = createTopic({ title, prompt });
+    touchGlobalWatchVersion();
+    touchTopicWatchVersion(topicId);
     res.redirect('/teacher');
   } catch (err) {
     next(err);
@@ -573,6 +769,8 @@ app.post('/teacher/topics/:id/close', (req, res, next) => {
   }
   try {
     closeTopic(req.params.id);
+    touchGlobalWatchVersion();
+    touchTopicWatchVersion(req.params.id);
     res.redirect('/teacher');
   } catch (err) {
     next(err);
@@ -585,6 +783,8 @@ app.post('/teacher/topics/:id/reopen', (req, res, next) => {
   }
   try {
     reopenTopic(req.params.id);
+    touchGlobalWatchVersion();
+    touchTopicWatchVersion(req.params.id);
     res.redirect('/teacher');
   } catch (err) {
     next(err);
@@ -597,6 +797,8 @@ app.post('/teacher/topics/:id/delete', (req, res, next) => {
   }
   try {
     deleteTopic(req.params.id);
+    touchGlobalWatchVersion();
+    touchTopicWatchVersion(req.params.id);
     res.redirect('/teacher');
   } catch (err) {
     next(err);
@@ -651,6 +853,8 @@ app.post('/student/topics/:id/comments', rateLimit({
       author,
       content
     });
+    touchGlobalWatchVersion();
+    touchTopicWatchVersion(req.params.id);
 
     res.redirect(`/student/topics/${req.params.id}?group=${group}`);
   } catch (err) {

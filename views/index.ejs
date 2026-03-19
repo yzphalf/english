@@ -6,13 +6,19 @@
   <title>英语讨论区</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
-<body class="student-page">
+<body
+  class="student-page"
+  data-watch-endpoint="/watch/version"
+  data-watch-version="<%= watchVersion %>"
+  data-watch-poll-ms="<%= watchPollMs %>"
+>
   <header class="topbar topbar-student">
     <div>
       <p class="eyebrow">English Speaking Board</p>
       <h1>英语课堂讨论（学生端）</h1>
     </div>
     <div class="top-actions">
+      <span class="chip auto-refresh-chip" id="auto-refresh-indicator">实时监测中</span>
       <form method="GET" action="/student" class="top-group-form">
         <label>
           选择小组
@@ -58,5 +64,6 @@
     </section>
   </main>
   <script src="/feedback.js"></script>
+  <script src="/auto-refresh.js"></script>
 </body>
 </html>

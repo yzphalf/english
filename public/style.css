@@ -189,6 +189,14 @@ a {
   white-space: nowrap;
 }
 
+.auto-refresh-chip {
+  border-color: #cdd9ea;
+  background: #f4f8ff;
+  color: #4d5a6c;
+  min-width: 110px;
+  justify-content: center;
+}
+
 .chip-ended {
   border-color: #f3c6c3;
   background: var(--danger-soft);
@@ -593,6 +601,9 @@ small {
   margin: 8px 0 0;
   line-height: 1.72;
   color: var(--text-2);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .empty-note {

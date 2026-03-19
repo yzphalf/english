@@ -6,7 +6,12 @@
   <title><%= topic.title %> - 全屏观看讨论</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
-<body class="teacher-page">
+<body
+  class="teacher-page"
+  data-watch-endpoint="/watch/topics/<%= topic.id %>/version"
+  data-watch-version="<%= watchVersion %>"
+  data-watch-poll-ms="<%= watchPollMs %>"
+>
   <header class="topbar topbar-teacher">
     <div>
       <p class="eyebrow">Teacher Panel</p>
@@ -21,6 +26,7 @@
         <button type="submit" class="logout-btn">退出登录</button>
       </form>
     </nav>
+    <span class="chip auto-refresh-chip" id="auto-refresh-indicator">实时监测中</span>
   </header>
 
   <main class="container watch-container">
@@ -68,5 +74,6 @@
     </section>
   </main>
   <script src="/feedback.js"></script>
+  <script src="/auto-refresh.js"></script>
 </body>
 </html>
