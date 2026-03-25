@@ -681,31 +681,34 @@ app.get('/teacher/topics/:id', (req, res, next) => {
       return res.status(404).send('Topic not found.');
     }
 
-    const selectedGroup = req.query.group === 'all'
-      ? 'all'
-      : (parseGroup(req.query.group) || 'all');
-
     const comments = [...topic.comments].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-    const filteredComments = selectedGroup === 'all'
-      ? comments
-      : comments.filter((comment) => comment.group === selectedGroup);
-
-    const groupCommentCounts = GROUPS.reduce((acc, group) => {
-      acc[group] = 0;
-      return acc;
-    }, {});
-    comments.forEach((comment) => {
-      if (groupCommentCounts[comment.group] !== undefined) {
-        groupCommentCounts[comment.group] += 1;
-      }
+    const groupBoards = GROUPS.map((group) => {
+      const groupComments = comments.filter((comment) => comment.group === group);
+      const submitters = new Set(
+        groupComments
+          .map((comment) => (comment.author || '').trim().toLowerCase())
+          .filter(Boolean)
+      );
+      return {
+        group,
+        comments: groupComments,
+        commentCount: groupComments.length,
+        submitterCount: submitters.size
+      };
     });
+    const totalSubmitters = new Set(
+      comments
+        .map((comment) => (comment.author || '').trim().toLowerCase())
+        .filter(Boolean)
+    ).size;
     const studentTopicLink = resolveQrTargetLink(req, topic.id);
 
     res.render('teacher-watch', {
       topic,
-      selectedGroup,
-      filteredComments,
-      groupCommentCounts,
+      selectedGroup: 'all',
+      groupBoards,
+      totalSubmitters,
+      totalComments: comments.length,
       groups: GROUPS,
       studentTopicLink,
       watchVersion: getWatchVersion(`topic:${topic.id}`),

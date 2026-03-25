@@ -69,6 +69,15 @@ a {
   backdrop-filter: saturate(140%) blur(14px);
 }
 
+.topbar-teacher {
+  position: static;
+  width: min(1260px, calc(100% - 28px));
+  margin: 14px auto 0;
+  border: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+}
+
 .topbar h1 {
   margin: 0;
   font-size: clamp(24px, 2.4vw, 34px);
@@ -105,6 +114,21 @@ a {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.watch-title-block {
+  min-width: 0;
+}
+
+.watch-title-block h1 {
+  margin-bottom: 6px;
+}
+
+.watch-submit-only {
+  margin: 4px 0 0;
+  color: var(--text-2);
+  font-size: 16px;
+  font-weight: 620;
 }
 
 .teacher-top-actions {
@@ -606,6 +630,37 @@ small {
   white-space: pre-wrap;
 }
 
+.group-board-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.group-board {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: #fff;
+  padding: 12px;
+}
+
+.group-board-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.group-board-head h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.group-board-stats {
+  margin-top: 0;
+  justify-content: flex-end;
+}
+
 .empty-note {
   margin: 10px 0 0;
   padding: 12px;
@@ -871,6 +926,11 @@ small {
     padding: 14px 16px;
   }
 
+  .topbar-teacher {
+    width: calc(100% - 20px);
+    margin-top: 10px;
+  }
+
   .topbar nav,
   .teacher-watch-nav,
   .top-actions,
@@ -912,6 +972,10 @@ small {
     grid-template-columns: 1fr;
   }
 
+  .group-board-grid {
+    grid-template-columns: 1fr;
+  }
+
   .group-label {
     max-width: 100%;
   }
@@ -920,5 +984,9 @@ small {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
+  }
+
+  .watch-submit-only {
+    font-size: 14px;
   }
 }

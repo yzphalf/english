@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title><%= topic.title %> - 全屏观看讨论</title>
+  <title>讨论面板 - 全屏观看</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body
@@ -13,9 +13,10 @@
   data-watch-poll-ms="<%= watchPollMs %>"
 >
   <header class="topbar topbar-teacher">
-    <div>
+    <div class="watch-title-block">
       <p class="eyebrow">English Speaking Board</p>
       <h1>讨论面板</h1>
+      <p class="watch-submit-only">总提交人数：<strong><%= totalSubmitters %></strong></p>
     </div>
     <div class="group-badge">
       <%= selectedGroup === 'all' ? '全部同学' : ('第 ' + selectedGroup + ' 组') %>
@@ -30,46 +31,41 @@
   </header>
 
   <main class="container watch-container">
-    <section class="card card-featured">
-      <div class="section-head">
-        <h2><%= topic.title %></h2>
-        <span class="chip"><%= filteredComments.length %> 条发言</span>
-      </div>
-      <p class="prompt"><%= topic.prompt %></p>
-
-      <form method="GET" action="/teacher/topics/<%= topic.id %>" class="group-form teacher-filter-form">
-        <label class="group-label">
-          切换查看范围
-          <select name="group" onchange="this.form.submit()">
-            <option value="all" <%= selectedGroup === 'all' ? 'selected' : '' %>>全部同学</option>
-            <% groups.forEach((group) => { %>
-              <option value="<%= group %>" <%= group === selectedGroup ? 'selected' : '' %>>
-                第 <%= group %> 组（<%= groupCommentCounts[group] || 0 %>）
-              </option>
-            <% }) %>
-          </select>
-        </label>
-      </form>
-    </section>
-
     <section class="card">
       <div class="section-head">
-        <h2>学生讨论内容</h2>
+        <h2>全部同学展示</h2>
       </div>
-      <% if (filteredComments.length === 0) { %>
-        <p class="empty-note">当前筛选下还没有讨论内容。</p>
+      <% if (totalComments === 0) { %>
+        <p class="empty-note">当前还没有任何小组提交内容。</p>
       <% } else { %>
-        <ul class="comment-list comment-list-cards">
-          <% filteredComments.forEach((comment) => { %>
-            <li class="comment-item">
-              <div class="meta">
-                <strong><%= comment.author %>（第 <%= comment.group || '未分组' %> 组）</strong>
-                <small><%= new Date(comment.createdAt).toLocaleString() %></small>
+        <div class="group-board-grid">
+          <% groupBoards.forEach((board) => { %>
+            <section class="group-board">
+              <div class="group-board-head">
+                <h3>第 <%= board.group %> 组</h3>
+                <div class="topic-meta-row group-board-stats">
+                  <span class="topic-meta-pill">已交 <strong><%= board.submitterCount %></strong> 人</span>
+                  <span class="topic-meta-pill">发言 <strong><%= board.commentCount %></strong> 条</span>
+                </div>
               </div>
-              <p><%= comment.content %></p>
-            </li>
+              <% if (board.comments.length === 0) { %>
+                <p class="empty-note">本组暂未提交。</p>
+              <% } else { %>
+                <ul class="comment-list comment-list-cards">
+                  <% board.comments.forEach((comment) => { %>
+                    <li class="comment-item">
+                      <div class="meta">
+                        <strong><%= comment.author %></strong>
+                        <small><%= new Date(comment.createdAt).toLocaleString() %></small>
+                      </div>
+                      <p><%= comment.content %></p>
+                    </li>
+                  <% }) %>
+                </ul>
+              <% } %>
+            </section>
           <% }) %>
-        </ul>
+        </div>
       <% } %>
     </section>
   </main>
