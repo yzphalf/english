@@ -636,6 +636,12 @@ small {
   gap: 12px;
 }
 
+@media (min-width: 1400px) {
+  .group-board-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .group-board {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
