@@ -3,227 +3,128 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>英语课堂讨论（老师端）</title>
+  <title>老师端管理面板</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body
-  class="teacher-page"
   data-watch-endpoint="/watch/version"
   data-watch-version="<%= watchVersion %>"
   data-watch-poll-ms="<%= watchPollMs %>"
 >
-  <header class="topbar topbar-teacher">
-    <div>
-      <p class="eyebrow">English Speaking Board</p>
-      <h1>英语课堂讨论（老师端）</h1>
+  <nav class="nav-bar">
+    <div style="display:flex; flex-direction:column;">
+      <span style="font-size:10px; font-weight:700; color:var(--padlet-pink); text-transform:uppercase;">Admin Dashboard</span>
+      <a href="/teacher" class="nav-brand" style="color:inherit;">话题管理中心</a>
     </div>
-    <form method="POST" action="/teacher/logout" class="inline-form">
-      <button type="submit" class="logout-btn" data-loading-text="退出中...">退出登录</button>
-    </form>
-    <span class="chip auto-refresh-chip" id="auto-refresh-indicator">实时监测中</span>
-  </header>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span id="auto-refresh-indicator" class="badge">监控正常</span>
+      <form method="POST" action="/teacher/logout" style="margin:0;">
+        <button type="submit" class="btn btn-outline" style="height:32px; font-size:12px;">退出登录</button>
+      </form>
+    </div>
+  </nav>
 
   <main class="container">
-    <div class="teacher-utility-bar">
-      <button id="open-publish-modal" type="button" class="publish-trigger">发布主题</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+      <h2 style="font-weight:900; margin:0;">讨论话题列表</h2>
+      <button id="open-publish-modal" class="btn btn-pink">✨ 发布新话题</button>
     </div>
-    <section class="card">
-      <div class="section-head">
-        <h2>讨论面板</h2>
-        <span class="chip"><%= topics.length %> 个主题</span>
-      </div>
 
-      <% if (topics.length === 0) { %>
-        <p class="empty-note">还没有讨论主题，点击右上角“发布主题”开始。</p>
-      <% } else { %>
-        <ul class="topic-list topic-list-grid">
-          <% topics.forEach((topic) => { %>
-            <li class="topic-item topic-click-item" data-href="/teacher/topics/<%= topic.id %>?group=all" tabindex="0">
-              <div class="topic-card-main-left">
-                <a class="topic-link topic-link-block" href="/teacher/topics/<%= topic.id %>?group=all">
-                  <div class="topic-headline">
-                    <strong><%= topic.title %></strong>
-                    <% if (topic.closedAt) { %>
-                      <span class="status-pill">已结束</span>
-                    <% } else { %>
-                      <span class="topic-meta-pill">进行中</span>
-                    <% } %>
-                  </div>
-                  <div class="topic-meta-row">
-                    <span class="topic-meta-pill">发言 <strong><%= topic.comments.length %></strong></span>
-                    <span class="topic-meta-pill">发布于 <%= new Date(topic.createdAt).toLocaleString() %></span>
-                  </div>
-                </a>
-              </div>
-              <div class="topic-card-actions-right">
-                <button
-                  type="button"
-                  class="secondary-btn qr-trigger"
-                  data-topic-id="<%= topic.id %>"
-                  data-student-link="/student/topics/<%= topic.id %>"
-                >
-                  生成二维码
-                </button>
-                <% if (topic.closedAt) { %>
-                  <form method="POST" action="/teacher/topics/<%= topic.id %>/reopen" onsubmit="return confirm('确认重新发布该讨论吗？学生端将重新可见，原有发言会保留。');">
-                    <button type="submit" class="restore-btn">重新发布</button>
-                  </form>
-                <% } else { %>
-                  <form method="POST" action="/teacher/topics/<%= topic.id %>/close" onsubmit="return confirm('确认结束这个讨论吗？结束后学生端将不再显示该主题。');">
-                    <button type="submit" class="danger-btn" data-loading-text="结束中...">结束讨论</button>
-                  </form>
-                <% } %>
-                <form
-                  method="POST"
-                  action="/teacher/topics/<%= topic.id %>/delete"
-                  onsubmit="return confirm('第一步确认：确定要删除这个帖子吗？') && confirm('第二步确认：删除后将无法恢复，包含所有讨论记录。继续吗？');"
-                >
-                  <button type="submit" class="delete-btn" data-loading-text="删除中...">删除帖子</button>
+    <% if (topics.length === 0) { %>
+      <div class="card" style="text-align: center; padding: 60px;">
+        <p style="color:var(--padlet-muted);">还没有发布任何话题。</p>
+      </div>
+    <% } else { %>
+      <div class="grid">
+        <% topics.forEach((topic) => { %>
+          <div class="card">
+            <div class="card-header">
+              <span class="badge <%= topic.closedAt ? 'badge-danger' : 'badge-success' %>">
+                <%= topic.closedAt ? '已关闭' : '进行中' %>
+              </span>
+              <span style="font-size:11px; color:var(--padlet-muted);"><%= new Date(topic.createdAt).toLocaleString() %></span>
+            </div>
+            <h3 style="margin-bottom:12px;"><%= topic.title %></h3>
+            <div style="margin-bottom:20px; font-size:13px; color:var(--padlet-muted);">已交讨论：<strong><%= topic.comments.length %></strong> 条</div>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+              <a href="/teacher/topics/<%= topic.id %>" class="btn btn-primary" style="grid-column: span 2;">实时小组监控 (Grid)</a>
+              <button class="btn btn-outline qr-trigger" style="grid-column: span 2;" data-topic-id="<%= topic.id %>" data-student-link="/student/topics/<%= topic.id %>">分享二维码</button>
+              
+              <% if (topic.closedAt) { %>
+                <form method="POST" action="/teacher/topics/<%= topic.id %>/reopen" style="grid-column: span 2; margin:0;">
+                  <button type="submit" class="btn btn-outline" style="width:100%; color:var(--padlet-green); border-color:var(--padlet-green);">重启讨论话题</button>
                 </form>
-              </div>
-            </li>
-          <% }) %>
-        </ul>
-      <% } %>
-    </section>
+              <% } else { %>
+                <form method="POST" action="/teacher/topics/<%= topic.id %>/close" style="grid-column: span 2; margin:0;">
+                  <button type="submit" class="btn btn-outline" style="width:100%; color:var(--padlet-pink); border-color:var(--padlet-pink);">关闭讨论话题</button>
+                </form>
+              <% } %>
+            </div>
+            <form method="POST" action="/teacher/topics/<%= topic.id %>/delete" onsubmit="return confirm('彻底删除？')" style="margin:12px 0 0;">
+              <button type="submit" style="width:100%; background:none; border:none; color:#666; font-size:11px; cursor:pointer; text-decoration:underline;">删除话题</button>
+            </form>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
   </main>
 
-  <div id="publish-modal" class="modal-shell" hidden>
-    <div class="modal-mask" id="close-publish-modal"></div>
-    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="publish-title">
-      <div class="section-head">
-        <h2 id="publish-title">发布讨论主题</h2>
-        <button type="button" class="modal-close" id="close-publish-btn">关闭</button>
-      </div>
-      <form method="POST" action="/teacher/topics" class="form">
-        <label>
-          主题标题
-          <input type="text" name="title" placeholder="例如：Is AI good for learning English?" required />
-        </label>
-        <label>
-          引导问题
-          <textarea name="prompt" rows="4" placeholder="写下本次讨论要求" required></textarea>
-        </label>
-        <button type="submit" data-loading-text="发布中...">立即发布</button>
+  <!-- Publish Modal -->
+  <div id="publish-modal" class="modal-overlay" hidden>
+    <div class="modal-backdrop" onclick="closeModal()"></div>
+    <div class="modal-content">
+      <h2 style="margin-bottom:20px;">🚀 发布话题</h2>
+      <form method="POST" action="/teacher/topics">
+        <label style="display:block; margin-bottom:8px; font-size:13px; font-weight:700;">话题标题</label>
+        <input name="title" class="input" style="margin-bottom:16px;" placeholder="例如：English in AI Era" required />
+        <label style="display:block; margin-bottom:8px; font-size:13px; font-weight:700;">引导问题</label>
+        <textarea name="prompt" class="input" style="height:120px; margin-bottom:20px;" placeholder="写下讨论要求..." required></textarea>
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn btn-outline" style="color:#999; border-color:#444;" onclick="closeModal()">取消</button>
+          <button type="submit" class="btn btn-primary">立即发布</button>
+        </div>
       </form>
-    </section>
+    </div>
   </div>
 
-  <div id="qr-modal" class="modal-shell" hidden>
-    <div class="modal-mask" id="close-qr-modal"></div>
-    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="qr-title">
-      <div class="section-head">
-        <h2 id="qr-title">帖子二维码</h2>
-        <div class="qr-modal-actions">
-          <button type="button" class="modal-close copy-link-btn" data-copy-target="#qr-topic-link" data-copy-success="链接已复制">复制链接</button>
-          <a id="save-qr-btn" class="modal-save-btn" href="#" download>保存到本地</a>
-          <button type="button" class="modal-close" id="close-qr-btn">关闭</button>
-        </div>
+  <!-- QR Modal -->
+  <div id="qr-modal" class="modal-overlay" hidden>
+    <div class="modal-backdrop" onclick="closeQr()"></div>
+    <div class="modal-content" style="text-align:center;">
+      <h2 style="margin-bottom:16px;">📱 讨论二维码</h2>
+      <div class="qr-container">
+        <img id="qr-img" alt="Scan to join" />
       </div>
-      <p class="share-link">
-        <a id="qr-topic-link" href="#" target="_blank" rel="noopener"></a>
-      </p>
-      <div class="qr-wrapper">
-        <img id="qr-topic-image" alt="帖子二维码" />
-      </div>
-      <p id="qr-hint" class="qr-hint" hidden>二维码加载失败，请重试。</p>
-    </section>
+      <p id="qr-link" style="font-size:12px; color:var(--padlet-blue); margin-bottom:20px; word-break:break-all; font-weight: 700; opacity: 0.8;"></p>
+      <button class="btn btn-primary" style="width: 100%; height: 44px;" onclick="closeQr()">返回列表</button>
+    </div>
   </div>
 
   <script>
-    const openBtn = document.getElementById('open-publish-modal');
-    const closeMask = document.getElementById('close-publish-modal');
-    const closeBtn = document.getElementById('close-publish-btn');
     const modal = document.getElementById('publish-modal');
     const qrModal = document.getElementById('qr-modal');
-    const closeQrMask = document.getElementById('close-qr-modal');
-    const closeQrBtn = document.getElementById('close-qr-btn');
-    const qrTopicImage = document.getElementById('qr-topic-image');
-    const qrTopicLink = document.getElementById('qr-topic-link');
-    const saveQrBtn = document.getElementById('save-qr-btn');
-    const qrHint = document.getElementById('qr-hint');
+    const qrImg = document.getElementById('qr-img');
+    const qrLink = document.getElementById('qr-link');
 
-    function openModal() {
-      modal.hidden = false;
-      document.body.style.overflow = 'hidden';
-    }
+    document.getElementById('open-publish-modal').onclick = () => { modal.hidden = false; };
+    function closeModal() { modal.hidden = true; }
+    function closeQr() { qrModal.hidden = true; }
 
-    function closeModal() {
-      modal.hidden = true;
-      document.body.style.overflow = '';
-    }
+    document.onkeydown = (e) => {
+      if (e.key === 'Escape') { closeModal(); closeQr(); }
+    };
 
-    function openQrModal(topicId, studentPath) {
-      const absoluteLink = `https://english.051231.xyz:8443${studentPath}`;
-      const qrSrc = `/teacher/topics/${topicId}/qr?link=${encodeURIComponent(absoluteLink)}&t=${Date.now()}`;
-      qrHint.hidden = true;
-      qrTopicImage.classList.add('is-loading');
-      qrTopicImage.src = qrSrc;
-      qrTopicLink.href = absoluteLink;
-      qrTopicLink.textContent = absoluteLink;
-      saveQrBtn.href = qrSrc;
-      saveQrBtn.download = `topic-${topicId}-qrcode.svg`;
-      qrModal.hidden = false;
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeQrModal() {
-      qrModal.hidden = true;
-      document.body.style.overflow = '';
-    }
-
-    openBtn.addEventListener('click', openModal);
-    closeMask.addEventListener('click', closeModal);
-    closeBtn.addEventListener('click', closeModal);
-    closeQrMask.addEventListener('click', closeQrModal);
-    closeQrBtn.addEventListener('click', closeQrModal);
-
-    document.querySelectorAll('.qr-trigger').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        openQrModal(btn.dataset.topicId, btn.dataset.studentLink);
-      });
-    });
-
-    qrTopicImage.addEventListener('error', () => {
-      qrTopicImage.classList.remove('is-loading');
-      qrHint.hidden = false;
-    });
-    qrTopicImage.addEventListener('load', () => {
-      qrTopicImage.classList.remove('is-loading');
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && !modal.hidden) {
-        closeModal();
+    document.querySelectorAll('.qr-trigger').forEach(btn => {
+      btn.onclick = () => {
+        const tid = btn.dataset.topicId;
+        const link = window.location.origin + btn.dataset.studentLink;
+        qrImg.src = `/teacher/topics/${tid}/qr?link=${encodeURIComponent(link)}`;
+        qrLink.innerText = link;
+        qrModal.hidden = false;
       }
-      if (event.key === 'Escape' && !qrModal.hidden) {
-        closeQrModal();
-      }
-    });
-
-    document.querySelectorAll('.topic-click-item').forEach((item) => {
-      item.addEventListener('click', (event) => {
-        if (event.target.closest('a, button, input, textarea, select')) {
-          return;
-        }
-        const href = item.dataset.href;
-        if (href) {
-          window.location.href = href;
-        }
-      });
-
-      item.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          const href = item.dataset.href;
-          if (href) {
-            window.location.href = href;
-          }
-        }
-      });
     });
   </script>
-  <script src="/feedback.js?v=20260319-2"></script>
-  <script src="/auto-refresh.js?v=20260319-2"></script>
+  <script src="/auto-refresh.js"></script>
 </body>
 </html>

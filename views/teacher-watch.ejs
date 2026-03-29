@@ -3,78 +3,169 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title><%= topic.title %> - 全屏观看讨论</title>
+  <title><%= topic.title %> - 实时讨论监控</title>
   <link rel="stylesheet" href="/style.css" />
+  <style>
+    /* Monitor-specific UI Dark Mode Overrides */
+    body { background-color: #050505; color: rgba(255,255,255,0.9); }
+    
+    .watch-nav {
+      background: #000;
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      border-bottom: 1px solid #222;
+    }
+    
+    .watch-header-card {
+      background: #111;
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      border-left: 6px solid var(--padlet-pink);
+      border-top: 1px solid #222;
+      border-right: 1px solid #222;
+      border-bottom: 1px solid #222;
+    }
+    
+    .watch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 20px;
+      padding-bottom: 60px;
+    }
+    
+    .watch-group-box {
+      background: #161616;
+      border-radius: 18px;
+      border: 1px solid #2a2a2a;
+      display: flex;
+      flex-direction: column;
+      min-height: 450px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    
+    .watch-group-head {
+      padding: 16px 20px;
+      background: #1f1f1f;
+      border-bottom: 1px solid #2a2a2a;
+      border-radius: 18px 18px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .watch-group-head h3 { margin: 0; font-size: 18px; font-weight: 800; color: #fff; }
+    
+    .watch-comment-flow {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    
+    .watch-comment-card {
+      background: #222;
+      border: 1px solid #333;
+      padding: 14px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .watch-comment-card strong { color: var(--padlet-blue); font-size: 14px; }
+    .watch-comment-card p { margin: 8px 0 0; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+    .watch-comment-card small { color: #666; font-size: 11px; }
+
+    .indicator-badge {
+      font-size: 12px;
+      padding: 4px 12px;
+      background: #166534; /* Darker green */
+      color: #fff;
+      border-radius: 100px;
+      font-weight: 700;
+      border: 1px solid #14532d;
+    }
+
+    .stat-label { font-size: 11px; font-weight: 800; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+    .stat-value { font-size: 36px; font-weight: 900; }
+  </style>
 </head>
 <body
-  class="teacher-page"
   data-watch-endpoint="/watch/topics/<%= topic.id %>/version"
   data-watch-version="<%= watchVersion %>"
   data-watch-poll-ms="<%= watchPollMs %>"
 >
-  <header class="topbar topbar-teacher">
-    <div class="watch-title-block">
-      <p class="eyebrow">English Speaking Board</p>
-      <h1>讨论面板</h1>
-      <p class="watch-topic-title"><%= topic.title %></p>
-      <p class="watch-topic-prompt"><%= topic.prompt %></p>
-      <div class="watch-topic-stats">
-        <span class="topic-meta-pill">总提交人数：<strong><%= totalSubmitters %></strong></span>
-        <span class="topic-meta-pill">总发言条数：<strong><%= totalComments %></strong></span>
-      </div>
+  <nav class="watch-nav">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <a href="/teacher" style="color: #666; text-decoration: none; font-size: 14px; font-weight: 700;">← 返回后台</a>
+      <span style="font-weight: 900; font-size: 18px; letter-spacing: -0.02em;">讨论实时监控</span>
     </div>
-    <div class="group-badge">
-      <%= selectedGroup === 'all' ? '全部同学' : ('第 ' + selectedGroup + ' 组') %>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span id="auto-refresh-indicator" class="indicator-badge">实时更新中</span>
+      <div style="width: 1px; height: 16px; background: #333;"></div>
+      <span style="font-size: 13px; color: #666;">话题: <%= topic.title %></span>
     </div>
-    <nav class="teacher-watch-nav">
-      <a class="back-link" href="/teacher?topic=<%= topic.id %>&group=<%= selectedGroup %>">返回老师首页</a>
-      <form method="POST" action="/teacher/logout" class="inline-form">
-        <button type="submit" class="logout-btn">退出登录</button>
-      </form>
-    </nav>
-    <span class="chip auto-refresh-chip" id="auto-refresh-indicator">实时监测中</span>
-  </header>
+  </nav>
 
-  <main class="container watch-container">
-    <section class="card">
-      <div class="section-head">
-        <h2>全部同学展示</h2>
-      </div>
-      <% if (totalComments === 0) { %>
-        <p class="empty-note">当前还没有任何小组提交内容。</p>
-      <% } else { %>
-        <div class="group-board-grid">
-          <% groupBoards.forEach((board) => { %>
-            <section class="group-board">
-              <div class="group-board-head">
-                <h3>第 <%= board.group %> 组</h3>
-                <div class="topic-meta-row group-board-stats">
-                  <span class="topic-meta-pill">已交 <strong><%= board.submitterCount %></strong> 人</span>
-                  <span class="topic-meta-pill">发言 <strong><%= board.commentCount %></strong> 条</span>
-                </div>
-              </div>
-              <% if (board.comments.length === 0) { %>
-                <p class="empty-note">本组暂未提交。</p>
-              <% } else { %>
-                <ul class="comment-list comment-list-cards">
-                  <% board.comments.forEach((comment) => { %>
-                    <li class="comment-item">
-                      <div class="meta">
-                        <strong><%= comment.author %></strong>
-                        <small><%= new Date(comment.createdAt).toLocaleString() %></small>
-                      </div>
-                      <p><%= comment.content %></p>
-                    </li>
-                  <% }) %>
-                </ul>
-              <% } %>
-            </section>
-          <% }) %>
+  <main class="container" style="max-width: 1600px;">
+    <div class="watch-header-card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="flex: 1;">
+          <h1 style="margin: 0 0 8px; font-size: 32px; font-weight: 900; color: #fff; letter-spacing: -0.04em;"><%= topic.title %></h1>
+          <p style="margin: 0; font-size: 16px; color: #888; line-height: 1.6; max-width: 900px;"><%= topic.prompt %></p>
         </div>
-      <% } %>
-    </section>
+        <div style="display: flex; gap: 32px; text-align: right;">
+          <div>
+            <div class="stat-label">参与人数</div>
+            <div class="stat-value" style="color: var(--padlet-blue);"><%= totalSubmitters %></div>
+          </div>
+          <div>
+            <div class="stat-label">发言总数</div>
+            <div class="stat-value" style="color: var(--padlet-pink);"><%= totalComments %></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="watch-grid">
+      <% groupBoards.forEach((board) => { %>
+        <section class="watch-group-box">
+          <div class="watch-group-head">
+            <h3>第 <%= board.group %> 组</h3>
+            <div style="display: flex; gap: 8px;">
+              <span class="badge" style="background: #222; border-color: #333; color: #888;">已交 <%= board.submitterCount %></span>
+              <span class="badge badge-primary">发言 <%= board.commentCount %></span>
+            </div>
+          </div>
+          <div class="watch-comment-flow">
+            <% if (board.comments.length === 0) { %>
+              <div style="text-align: center; padding-top: 80px; color: #333;">
+                <p style="font-size: 32px; margin-bottom: 12px;">⌛</p>
+                <p style="font-size: 13px;">等待提交...</p>
+              </div>
+            <% } else { %>
+              <% board.comments.forEach((comment) => { %>
+                <div class="watch-comment-card">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <strong><%= comment.author %></strong>
+                    <small><%= new Date(comment.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) %></small>
+                  </div>
+                  <p><%= comment.content %></p>
+                </div>
+              <% }) %>
+            <% } %>
+          </div>
+        </section>
+      <% }) %>
+    </div>
   </main>
-  <script src="/feedback.js?v=20260319-2"></script>
-  <script src="/auto-refresh.js?v=20260319-2"></script>
+
+  <script src="/auto-refresh.js"></script>
 </body>
 </html>

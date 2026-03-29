@@ -650,6 +650,10 @@ app.post('/teacher/logout', (req, res) => {
   });
 });
 
+app.get('/testwall', (req, res) => {
+  res.send('Wall route is reachable');
+});
+
 app.get('/teacher', (req, res, next) => {
   if (!req.session || !req.session.teacherAuthed) {
     return requireTeacherAuth(req, res, next);
@@ -670,24 +674,60 @@ app.get('/teacher', (req, res, next) => {
   }
 });
 
+app.get('/teacher/topics/:id/wall', (req, res, next) => {
+  if (!req.session || !req.session.teacherAuthed) {
+    return requireTeacherAuth(req, res, next);
+  }
+  try {
+    const topic = getTopicById(req.params.id);
+    if (!topic) return res.status(404).send('Topic not found.');
+    
+    res.render('public-wall', {
+      topic,
+      comments: topic.comments,
+      isTeacher: true,
+      watchVersion: getWatchVersion(`topic:${topic.id}`),
+      watchPollMs: WATCH_POLL_MS
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/teacher/topics/:id/qr', async (req, res, next) => {
+  if (!req.session || !req.session.teacherAuthed) {
+    return requireTeacherAuth(req, res, next);
+  }
+  try {
+    const topic = getTopicById(req.params.id);
+    if (!topic) return res.status(404).send('Topic not found.');
+
+    const studentTopicLink = buildStudentTopicLink(req, topic.id);
+    const svg = await QRCode.toString(studentTopicLink, {
+      type: 'svg', width: 320, margin: 1, errorCorrectionLevel: 'M'
+    });
+
+    res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(svg);
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.get('/teacher/topics/:id', (req, res, next) => {
   if (!req.session || !req.session.teacherAuthed) {
     return requireTeacherAuth(req, res, next);
   }
   try {
     const topic = getTopicById(req.params.id);
-
-    if (!topic) {
-      return res.status(404).send('Topic not found.');
-    }
+    if (!topic) return res.status(404).send('Topic not found.');
 
     const comments = [...topic.comments].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     const groupBoards = GROUPS.map((group) => {
       const groupComments = comments.filter((comment) => comment.group === group);
       const submitters = new Set(
-        groupComments
-          .map((comment) => (comment.author || '').trim().toLowerCase())
-          .filter(Boolean)
+        groupComments.map((c) => (c.author || '').trim().toLowerCase()).filter(Boolean)
       );
       return {
         group,
@@ -697,11 +737,8 @@ app.get('/teacher/topics/:id', (req, res, next) => {
       };
     });
     const totalSubmitters = new Set(
-      comments
-        .map((comment) => (comment.author || '').trim().toLowerCase())
-        .filter(Boolean)
+      comments.map((c) => (c.author || '').trim().toLowerCase()).filter(Boolean)
     ).size;
-    const studentTopicLink = resolveQrTargetLink(req, topic.id);
 
     res.render('teacher-watch', {
       topic,
@@ -710,7 +747,6 @@ app.get('/teacher/topics/:id', (req, res, next) => {
       totalSubmitters,
       totalComments: comments.length,
       groups: GROUPS,
-      studentTopicLink,
       watchVersion: getWatchVersion(`topic:${topic.id}`),
       watchPollMs: WATCH_POLL_MS
     });
@@ -743,17 +779,11 @@ app.get('/teacher/topics/:id/qr', async (req, res, next) => {
   }
   try {
     const topic = getTopicById(req.params.id);
-
-    if (!topic) {
-      return res.status(404).send('Topic not found.');
-    }
+    if (!topic) return res.status(404).send('Topic not found.');
 
     const studentTopicLink = buildStudentTopicLink(req, topic.id);
     const svg = await QRCode.toString(studentTopicLink, {
-      type: 'svg',
-      width: 320,
-      margin: 1,
-      errorCorrectionLevel: 'M'
+      type: 'svg', width: 320, margin: 1, errorCorrectionLevel: 'M'
     });
 
     res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
@@ -931,3 +961,4 @@ startServer().catch((err) => {
   console.error('Failed to start server:', err);
   process.exit(1);
 });
+
