@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title><%= topic.title %> - 全屏观看讨论</title>
+  <title>讨论面板 - 全屏观看</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body
@@ -16,12 +16,7 @@
     <div class="watch-title-block">
       <p class="eyebrow">English Speaking Board</p>
       <h1>讨论面板</h1>
-      <p class="watch-topic-title"><%= topic.title %></p>
-      <p class="watch-topic-prompt"><%= topic.prompt %></p>
-      <div class="watch-topic-stats">
-        <span class="topic-meta-pill">总提交人数：<strong><%= totalSubmitters %></strong></span>
-        <span class="topic-meta-pill">总发言条数：<strong><%= totalComments %></strong></span>
-      </div>
+      <p class="watch-submit-only">总提交人数：<strong><%= totalSubmitters %></strong></p>
     </div>
     <div class="group-badge">
       <%= selectedGroup === 'all' ? '全部同学' : ('第 ' + selectedGroup + ' 组') %>
@@ -49,7 +44,6 @@
               <div class="group-board-head">
                 <h3>第 <%= board.group %> 组</h3>
                 <div class="topic-meta-row group-board-stats">
-                  <span class="topic-meta-pill">已交 <strong><%= board.submitterCount %></strong> 人</span>
                   <span class="topic-meta-pill">发言 <strong><%= board.commentCount %></strong> 条</span>
                 </div>
               </div>

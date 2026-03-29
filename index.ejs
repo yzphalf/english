@@ -35,25 +35,25 @@
   </header>
 
   <main class="container student-home">
-    <div class="forum-layout">
-      <section class="card card-featured forum-main-card">
+    <div class="student-layout">
+      <section class="card card-featured student-main-card">
         <div class="section-head">
-          <h2>Discussion Topics</h2>
+          <h2>讨论主题</h2>
           <span class="chip">共 <%= topics.length %> 个主题</span>
         </div>
         <p class="group-tip">当前将以第 <strong><%= selectedGroup %></strong> 组身份进入并发言。</p>
         <% if (topics.length === 0) { %>
           <p class="empty-note">暂无主题，请等待老师发布讨论题目。</p>
         <% } else { %>
-          <ul class="topic-list forum-topic-list">
+          <ul class="topic-list topic-grid">
             <% topics.forEach((topic) => { %>
-              <li class="topic-item forum-topic-item">
-                <a class="topic-card-link forum-topic-link" href="/student/topics/<%= topic.id %>?group=<%= selectedGroup %>">
-                  <div class="forum-topic-head">
-                    <h3 class="topic-card-title forum-topic-title"><%= topic.title %></h3>
-                    <span class="topic-meta-pill forum-status-pill">可参与</span>
+              <li class="topic-item">
+                <a class="topic-card-link" href="/student/topics/<%= topic.id %>?group=<%= selectedGroup %>">
+                  <div class="topic-card-top">
+                    <h3 class="topic-card-title"><%= topic.title %></h3>
+                    <span class="topic-meta-pill">可参与</span>
                   </div>
-                  <div class="topic-meta-row forum-topic-meta">
+                  <div class="topic-meta-row">
                     <span class="topic-meta-pill">讨论 <strong><%= topic.comments ? topic.comments.length : 0 %></strong></span>
                     <span class="topic-meta-pill">发布于 <%= new Date(topic.createdAt).toLocaleString() %></span>
                   </div>
@@ -64,14 +64,27 @@
         <% } %>
       </section>
 
-      <aside class="forum-sidebar">
-        <section class="card side-card forum-side-card">
-          <h3>Discussion Snapshot</h3>
-          <ul class="forum-side-list">
-            <li><span>当前小组</span><strong>第 <%= selectedGroup %> 组</strong></li>
-            <li><span>主题数量</span><strong><%= topics.length %></strong></li>
-            <li><span>总发言数</span><strong><%= topics.reduce((sum, topic) => sum + (topic.comments ? topic.comments.length : 0), 0) %></strong></li>
-          </ul>
+      <aside class="student-side">
+        <section class="card side-card">
+          <h3>小组状态</h3>
+          <div class="summary-grid">
+            <article class="summary-card">
+              <h3>当前小组</h3>
+              <p>第 <%= selectedGroup %> 组</p>
+            </article>
+            <article class="summary-card">
+              <h3>主题数量</h3>
+              <p><%= topics.length %></p>
+            </article>
+            <article class="summary-card">
+              <h3>总发言数</h3>
+              <p><%= topics.reduce((sum, topic) => sum + (topic.comments ? topic.comments.length : 0), 0) %></p>
+            </article>
+          </div>
+        </section>
+        <section class="card side-card">
+          <h3>讨论建议</h3>
+          <p class="group-tip">先看题目再发言，尽量用完整句表达观点，并在结尾补一句理由。</p>
         </section>
       </aside>
     </div>

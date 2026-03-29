@@ -36,48 +36,32 @@
     </div>
   </header>
 
-  <main class="container student-home">
-    <div class="forum-layout forum-layout-topic">
-      <section class="card card-featured forum-main-card">
-        <div class="section-head">
-          <h2><%= topic.title %></h2>
-          <span class="chip">当前第 <%= selectedGroup %> 组</span>
-        </div>
-        <p class="prompt"><%= topic.prompt %></p>
-        <div class="topic-meta-row">
-          <span class="topic-meta-pill">当前身份：第 <strong><%= selectedGroup %></strong> 组</span>
-          <span class="topic-meta-pill">主题发言总数：<strong><%= comments.length %></strong></span>
-        </div>
+  <main class="container discussion-stack">
+    <section class="card card-featured">
+      <div class="section-head">
+        <h2>我来发表讨论</h2>
+        <span class="chip">当前第 <%= selectedGroup %> 组</span>
+      </div>
+      <p class="prompt"><%= topic.prompt %></p>
+      <div class="topic-meta-row">
+        <span class="topic-meta-pill">当前身份：第 <strong><%= selectedGroup %></strong> 组</span>
+        <span class="topic-meta-pill">主题发言总数：<strong><%= comments.length %></strong></span>
+      </div>
 
-        <h3>发表你的观点</h3>
-        <form method="POST" action="/student/topics/<%= topic.id %>/comments" class="form">
-          <input type="hidden" name="group" value="<%= selectedGroup %>" />
-          <label>
-            你的名字
-            <input type="text" name="author" placeholder="例如：Alice" required />
-          </label>
-          <label>
-            讨论内容
-            <textarea name="content" rows="5" placeholder="写下你的观点" required></textarea>
-          </label>
-          <button type="submit" data-loading-text="提交中...">提交讨论</button>
-        </form>
-      </section>
-
-      <aside class="forum-sidebar">
-        <section class="card side-card forum-side-card forum-side-sticky">
-          <h3>Discussion Meta</h3>
-          <ul class="forum-side-list">
-            <li><span>当前小组</span><strong>第 <%= selectedGroup %> 组</strong></li>
-            <li><span>总发言</span><strong><%= comments.length %></strong></li>
-            <li><span>主题状态</span><strong>可参与</strong></li>
-          </ul>
-          <nav class="teacher-watch-nav">
-            <a class="back-link" href="/student?group=<%= selectedGroup %>">返回主题列表</a>
-          </nav>
-        </section>
-      </aside>
-    </div>
+      <h3>发表你的观点</h3>
+      <form method="POST" action="/student/topics/<%= topic.id %>/comments" class="form">
+        <input type="hidden" name="group" value="<%= selectedGroup %>" />
+        <label>
+          你的名字
+          <input type="text" name="author" placeholder="例如：Alice" required />
+        </label>
+        <label>
+          讨论内容
+          <textarea name="content" rows="5" placeholder="写下你的观点" required></textarea>
+        </label>
+        <button type="submit" data-loading-text="提交中...">提交讨论</button>
+      </form>
+    </section>
 
     <section class="card">
       <div class="section-head">
