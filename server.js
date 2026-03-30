@@ -60,7 +60,7 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: true,
   lastModified: true,
-  maxAge: '6h'
+  maxAge: 0
 }));
 
 function initSchema() {
