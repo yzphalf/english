@@ -41,7 +41,7 @@ let redisReady = false;
 const localRateMap = new Map();
 const SESSION_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
 const WATCH_POLL_MS = Number(process.env.WATCH_POLL_MS) || 1500;
-const DEFAULT_PUBLIC_BASE_URL = 'https://english.051231.xyz:8443';
+const DEFAULT_PUBLIC_BASE_URL = 'https://english.19401128.xyz:8443';
 
 initSchema();
 migrateFromLegacyJson();
@@ -961,4 +961,3 @@ startServer().catch((err) => {
   console.error('Failed to start server:', err);
   process.exit(1);
 });
-

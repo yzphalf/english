@@ -13,6 +13,14 @@ APP_PORT="${APP_PORT:-3000}"
 TEACHER_USERNAME="${TEACHER_USERNAME:-admin}"
 TEACHER_PASSWORD="${TEACHER_PASSWORD:-}"
 
+random_string() {
+  local chars="$1"
+  local length="$2"
+  local value
+  value="$(tr -dc "$chars" </dev/urandom | head -c "$length" || true)"
+  printf '%s' "$value"
+}
+
 if [ "$(id -u)" -ne 0 ]; then
   echo "Please run as root: sudo bash $0" >&2
   exit 1
@@ -24,11 +32,11 @@ if ! grep -qi ubuntu /etc/os-release; then
 fi
 
 if [ -z "$TEACHER_PASSWORD" ]; then
-  TEACHER_PASSWORD="$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 18)"
+  TEACHER_PASSWORD="$(random_string 'A-Za-z0-9' 18)"
 fi
 
-SESSION_SECRET="$(tr -dc 'A-Za-z0-9_-' </dev/urandom | head -c 48)"
-PUBLIC_BASE_URL="https://${DOMAIN}"
+SESSION_SECRET="$(random_string 'A-Za-z0-9_-' 48)"
+PUBLIC_BASE_URL="${PUBLIC_BASE_URL:-https://${DOMAIN}}"
 NGINX_SITE="/etc/nginx/sites-available/${SERVICE_NAME}"
 PM2_CONFIG="${APP_ROOT}/ecosystem.config.cjs"
 ENV_FILE="${APP_ROOT}/.env.production"

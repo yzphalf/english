@@ -154,7 +154,7 @@
     }
 
     function openQrModal(topicId, studentPath) {
-      const absoluteLink = `https://english.051231.xyz:8443${studentPath}`;
+      const absoluteLink = `${window.location.origin}${studentPath}`;
       const qrSrc = `/teacher/topics/${topicId}/qr?link=${encodeURIComponent(absoluteLink)}&t=${Date.now()}`;
       qrHint.hidden = true;
       qrTopicImage.classList.add('is-loading');
